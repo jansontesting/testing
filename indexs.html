@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Productivity Monitor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #fff, #f0f0f0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .setup-section {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .setup-section h3 {
+            margin-bottom: 15px;
+            color: #ffd700;
+        }
+
+        .model-input {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .model-input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .status-card {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .status-indicator {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 10px;
+            animation: pulse 2s infinite;
+        }
+
+        .status-present { background: #4ade80; box-shadow: 0 0 20px rgba(74, 222, 128, 0.5); }
+        .status-away { background: #ef4444; box-shadow: 0 0 20px rgba(239, 68, 68, 0.5); }
+        .status-mobile { background: #f59e0b; box-shadow: 0 0 20px rgba(245, 158, 11, 0.5); }
+        .status-loading { background: #6366f1; box-shadow: 0 0 20px rgba(99, 102, 241, 0.5); }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .timer-display {
+            font-size: 3em;
+            font-weight: bold;
+            margin: 20px 0;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .video-container {
+            position: relative;
+            width: 300px;
+            height: 225px;
+            margin: 20px auto;
+            border-radius: 15px;
+            overflow: hidden;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        #video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .predictions {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+
+        .prediction-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 8px 0;
+            padding: 8px;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .prediction-bar {
+            width: 100px;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .prediction-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4ade80, #22c55e);
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-item {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .activity-log {
+            max-height: 200px;
+            overflow-y: auto;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+
+        .log-entry {
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 0.9em;
+        }
+
+        .error-message {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.5);
+            color: #fecaca;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+
+        .success-message {
+            background: rgba(74, 222, 128, 0.2);
+            border: 1px solid rgba(74, 222, 128, 0.5);
+            color: #bbf7d0;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+
+        @media (max-width: 768px) {
+            .container { padding: 20px; }
+            .timer-display { font-size: 2em; }
+            .video-container { width: 250px; height: 188px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 AI Productivity Monitor</h1>
+            <p>Powered by your custom Teachable Machine model</p>
+        </div>
+
+        <!-- Model Setup Section -->
+        <div class="setup-section">
+            <h3>📚 Load Your Teachable Machine Model</h3>
+            <input 
+                type="text" 
+                id="model-url" 
+                class="model-input" 
+                placeholder="Paste your model.json URL here (e.g., https://teachablemachine.withgoogle.com/models/YOUR_MODEL_ID/)"
+                value="https://teachablemachine.withgoogle.com/models/lgVR4UDz1/"
+            >
+            <button onclick="loadModel()" id="load-model-btn">Load Model</button>
+            <div id="model-status"></div>
+        </div>
+
+        <div class="status-card">
+            <div id="status-indicator" class="status-indicator status-loading"></div>
+            <span id="status-text">Load your model first</span>
+        </div>
+
+        <div class="timer-display" id="timer">00:00:00</div>
+
+        <div class="controls">
+            <button id="start-btn" onclick="startMonitoring()" disabled>Start Monitoring</button>
+            <button id="stop-btn" onclick="stopMonitoring()" disabled>Stop Monitoring</button>
+            <button onclick="resetStats()">Reset Stats</button>
+        </div>
+
+        <div class="video-container">
+            <video id="video" autoplay muted></video>
+        </div>
+
+        <!-- AI Predictions Display -->
+        <div class="predictions" id="predictions" style="display: none;">
+            <h4>🧠 AI Predictions (Real-time)</h4>
+            <div id="prediction-list"></div>
+        </div>
+
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-value" id="present-time">0m</div>
+                <div class="stat-label">Present Time</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="away-time">0m</div>
+                <div class="stat-label">Away Time</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="mobile-time">0m</div>
+                <div class="stat-label">Mobile Time</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="productivity-score">0%</div>
+                <div class="stat-label">Productivity</div>
+            </div>
+        </div>
+
+        <div class="activity-log" id="activity-log">
+            <div class="log-entry">👋 Welcome! Load your Teachable Machine model to get started.</div>
+        </div>
+    </div>
+
+    <!-- TensorFlow.js and Teachable Machine Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tensorflow/3.18.0/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8/dist/teachablemachine-image.min.js"></script>
+
+    <script>
+        let model = null;
+        let webcam = null;
+        let labelContainer = null;
+        let maxPredictions = 0;
+        
+        let isMonitoring = false;
+        let currentStatus = 'loading';
+        let startTime = null;
+        let totalPresentTime = 0;
+        let totalAwayTime = 0;
+        let totalMobileTime = 0;
+        let lastStatusChange = null;
+        let timerInterval = null;
+        let predictionInterval = null;
+        let video = null;
+
+        // Status mapping - adjust these based on your model's class names
+        const statusMapping = {
+            'laptop': 'present',
+            'present': 'present',
+            'working': 'present',
+            'mobile': 'mobile',
+            'phone': 'mobile',
+            'away': 'away',
+            'absent': 'away',
+            'empty': 'away'
+        };
+
+        async function loadModel() {
+            const modelUrl = document.getElementById('model-url').value.trim();
+            const statusDiv = document.getElementById('model-status');
+            const loadBtn = document.getElementById('load-model-btn');
+            
+            if (!modelUrl || !modelUrl.includes('teachablemachine.withgoogle.com')) {
+                showError('Please enter a valid Teachable Machine model URL');
+                return;
+            }
+
+            try {
+                loadBtn.disabled = true;
+                loadBtn.textContent = 'Loading...';
+                statusDiv.innerHTML = '<div class="success-message">🔄 Loading your AI model...</div>';
+
+                // Extract model ID and construct proper URLs
+                let modelID;
+                if (modelUrl.includes('/models/') && modelUrl.includes('/')) {
+                    modelID = modelUrl.split('/models/')[1].split('/')[0];
+                } else {
+                    throw new Error('Invalid model URL format');
+                }
+
+                const modelURL = `https://teachablemachine.withgoogle.com/models/${modelID}/`;
+                const metadataURL = modelURL + 'metadata.json';
+
+                // Load the model
+                model = await tmImage.load(modelURL + 'model.json', metadataURL);
+                maxPredictions = model.getTotalClasses();
+
+                statusDiv.innerHTML = '<div class="success-message">✅ Model loaded successfully! Ready to start monitoring.</div>';
+                document.getElementById('start-btn').disabled = false;
+                updateStatus('away', 'Model loaded - Ready to start');
+                
+                // Show predictions container
+                document.getElementById('predictions').style.display = 'block';
+                setupPredictionDisplay();
+                
+                addLogEntry(`🤖 AI model loaded with ${maxPredictions} classes`);
+
+            } catch (error) {
+                console.error('Error loading model:', error);
+                showError(`Failed to load model: ${error.message}. Please check your model URL.`);
+            } finally {
+                loadBtn.disabled = false;
+                loadBtn.textContent = 'Load Model';
+            }
+        }
+
+        function setupPredictionDisplay() {
+            const predictionList = document.getElementById('prediction-list');
+            predictionList.innerHTML = '';
+            
+            for (let i = 0; i < maxPredictions; i++) {
+                const predictionItem = document.createElement('div');
+                predictionItem.className = 'prediction-item';
+                predictionItem.innerHTML = `
+                    <span class="prediction-label">Class ${i + 1}</span>
+                    <div class="prediction-bar">
+                        <div class="prediction-fill" id="prediction-${i}"></div>
+                    </div>
+                    <span class="prediction-value" id="value-${i}">0%</span>
+                `;
+                predictionList.appendChild(predictionItem);
+            }
+        }
+
+        async function startMonitoring() {
+            if (!model) {
+                showError('Please load your model first!');
+                return;
+            }
+
+            try {
+                // Get camera access
+                const constraints = {
+                    video: {
+                        width: { ideal: 640, max: 1280 },
+                        height: { ideal: 480, max: 720 },
+                        facingMode: 'user'
+                    }
+                };
+                
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                video = document.getElementById('video');
+                video.srcObject = stream;
+
+                // Wait for video to be ready
+                await new Promise(resolve => {
+                    video.onloadedmetadata = resolve;
+                });
+
+                isMonitoring = true;
+                startTime = Date.now();
+                lastStatusChange = Date.now();
+                
+                // Update UI
+                document.getElementById('start-btn').disabled = true;
+                document.getElementById('stop-btn').disabled = false;
+                
+                // Start AI predictions and timer
+                startAIPredictions();
+                startTimer();
+                
+                addLogEntry('🎥 Camera activated - AI monitoring started');
+                updateStatus('present', 'Analyzing with AI...');
+                
+            } catch (error) {
+                console.error('Error accessing camera:', error);
+                showError('Camera access denied. Please allow camera permissions and try again.');
+            }
+        }
+
+        function startAIPredictions() {
+            predictionInterval = setInterval(async () => {
+                if (!isMonitoring || !video || !model) return;
+                
+                await predict();
+            }, 2000); // Predict every 2 seconds
+        }
+
+        async function predict() {
+            try {
+                // Make prediction
+                const predictions = await model.predict(video);
+                
+                // Update prediction display
+                let highestPrediction = { className: '', probability: 0 };
+                
+                for (let i = 0; i < maxPredictions; i++) {
+                    const prediction = predictions[i];
+                    const probability = (prediction.probability * 100).toFixed(1);
+                    
+                    // Update UI
+                    document.getElementById(`prediction-${i}`).style.width = `${probability}%`;
+                    document.getElementById(`value-${i}`).textContent = `${probability}%`;
+                    
+                    // Update class name if we have it
+                    const labelElement = document.querySelector(`#prediction-list .prediction-item:nth-child(${i + 1}) .prediction-label`);
+                    if (labelElement) {
+                        labelElement.textContent = prediction.className || `Class ${i + 1}`;
+                    }
+                    
+                    // Find highest prediction
+                    if (prediction.probability > highestPrediction.probability) {
+                        highestPrediction = {
+                            className: prediction.className.toLowerCase(),
+                            probability: prediction.probability
+                        };
+                    }
+                }
+                
+                // Determine status based on highest prediction
+                if (highestPrediction.probability > 0.6) { // 60% confidence threshold
+                    const newStatus = mapClassToStatus(highestPrediction.className);
+                    
+                    if (newStatus !== currentStatus) {
+                        updateStatusTime();
+                        currentStatus = newStatus;
+                        lastStatusChange = Date.now();
+                        
+                        const confidence = (highestPrediction.probability * 100).toFixed(1);
+                        
+                        switch(newStatus) {
+                            case 'present':
+                                updateStatus('present', `Present - Working (${confidence}% confident)`);
+                                addLogEntry(`🟢 AI detected: Working on laptop (${confidence}%)`);
+                                break;
+                            case 'mobile':
+                                updateStatus('mobile', `Using mobile device (${confidence}% confident)`);
+                                addLogEntry(`🟡 AI detected: Using mobile phone (${confidence}%)`);
+                                break;
+                            case 'away':
+                                updateStatus('away', `Away from desk (${confidence}% confident)`);
+                                addLogEntry(`🔴 AI detected: Away from workspace (${confidence}%)`);
+                                break;
+                        }
+                    }
+                }
+                
+            } catch (error) {
+                console.error('Prediction error:', error);
+            }
+        }
+
+        function mapClassToStatus(className) {
+            // Check if className matches any of our status mappings
+            for (const [key, status] of Object.entries(statusMapping)) {
+                if (className.includes(key)) {
+                    return status;
+                }
+            }
+            
+            // Default fallback - you might need to adjust this based on your model
+            if (className.includes('laptop') || className.includes('computer') || className.includes('work')) {
+                return 'present';
+            } else if (className.includes('phone') || className.includes('mobile')) {
+                return 'mobile';
+            } else {
+                return 'away';
+            }
+        }
+
+        function stopMonitoring() {
+            isMonitoring = false;
+            
+            // Stop camera
+            if (video && video.srcObject) {
+                video.srcObject.getTracks().forEach(track => track.stop());
+            }
+            
+            // Clear intervals
+            if (timerInterval) clearInterval(timerInterval);
+            if (predictionInterval) clearInterval(predictionInterval);
+            
+            // Update UI
+            document.getElementById('start-btn').disabled = false;
+            document.getElementById('stop-btn').disabled = true;
+            
+            updateStatus('away', 'Monitoring stopped');
+            addLogEntry('⏹️ Monitoring stopped');
+        }
+
+        function updateStatus(status, text) {
+            const indicator = document.getElementById('status-indicator');
+            const statusText = document.getElementById('status-text');
+            
+            indicator.className = `status-indicator status-${status}`;
+            statusText.textContent = text;
+        }
+
+        function updateStatusTime() {
+            const now = Date.now();
+            const duration = now - lastStatusChange;
+            
+            switch(currentStatus) {
+                case 'present':
+                    totalPresentTime += duration;
+                    break;
+                case 'away':
+                    totalAwayTime += duration;
+                    break;
+                case 'mobile':
+                    totalMobileTime += duration;
+                    break;
+            }
+            
+            updateStats();
+        }
+
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                if (!isMonitoring) return;
+                
+                const elapsed = Date.now() - startTime;
+                const hours = Math.floor(elapsed / 3600000);
+                const minutes = Math.floor((elapsed % 3600000) / 60000);
+                const seconds = Math.floor((elapsed % 60000) / 1000);
+                
+                document.getElementById('timer').textContent = 
+                    `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }, 1000);
+        }
+
+        function updateStats() {
+            const presentMinutes = Math.floor(totalPresentTime / 60000);
+            const awayMinutes = Math.floor(totalAwayTime / 60000);
+            const mobileMinutes = Math.floor(totalMobileTime / 60000);
+            const totalMinutes = presentMinutes + awayMinutes + mobileMinutes;
+            
+            const productivity = totalMinutes > 0 ? Math.round((presentMinutes / totalMinutes) * 100) : 0;
+            
+            document.getElementById('present-time').textContent = `${presentMinutes}m`;
+            document.getElementById('away-time').textContent = `${awayMinutes}m`;
+            document.getElementById('mobile-time').textContent = `${mobileMinutes}m`;
+            document.getElementById('productivity-score').textContent = `${productivity}%`;
+        }
+
+        function resetStats() {
+            totalPresentTime = 0;
+            totalAwayTime = 0;
+            totalMobileTime = 0;
+            updateStats();
+            
+            const log = document.getElementById('activity-log');
+            log.innerHTML = '<div class="log-entry">📊 Stats reset - Starting fresh tracking</div>';
+            addLogEntry('All statistics have been reset');
+        }
+
+        function addLogEntry(message) {
+            const log = document.getElementById('activity-log');
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.textContent = `${new Date().toLocaleTimeString()}: ${message}`;
+            
+            log.appendChild(entry);
+            log.scrollTop = log.scrollHeight;
+            
+            while (log.children.length > 50) {
+                log.removeChild(log.firstChild);
+            }
+        }
+
+        function showError(message) {
+            const statusDiv = document.getElementById('model-status');
+            statusDiv.innerHTML = `<div class="error-message">❌ ${message}</div>`;
+        }
+
+        // Initialize
+        window.addEventListener('load', () => {
+            updateStatus('loading', 'Load your Teachable Machine model to begin');
+            addLogEntry('🚀 App initialized - Ready to load your AI model');
+        });
+    </script>
+</body>
+</html>
